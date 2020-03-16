@@ -112,6 +112,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// 滑杆结束滑动
 - (void)sliderChangeEnded;
 
+- (void)addMuteBtnSel:(SEL)selector actionTaget:(id)target;
+
+- (void)changeMuteStatus:(BOOL)isMute;
+
 @end
 
 NS_ASSUME_NONNULL_END

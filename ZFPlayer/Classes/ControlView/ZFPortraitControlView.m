@@ -40,7 +40,7 @@
 @property (nonatomic, strong) UILabel *titleLabel;
 /// 播放或暂停按钮
 @property (nonatomic, strong) UIButton *playOrPauseBtn;
-/// 播放的当前时间 
+/// 播放的当前时间
 @property (nonatomic, strong) UILabel *currentTimeLabel;
 /// 滑杆
 @property (nonatomic, strong) ZFSliderView *slider;
@@ -48,6 +48,8 @@
 @property (nonatomic, strong) UILabel *totalTimeLabel;
 /// 全屏按钮
 @property (nonatomic, strong) UIButton *fullScreenBtn;
+
+@property (nonatomic, strong) UIButton *muteBtn;
 
 @property (nonatomic, assign) BOOL isShow;
 
@@ -66,6 +68,7 @@
         [self.bottomToolView addSubview:self.slider];
         [self.bottomToolView addSubview:self.totalTimeLabel];
         [self.bottomToolView addSubview:self.fullScreenBtn];
+        [self.bottomToolView addSubview:self.muteBtn];
         
         // 设置子控件的响应事件
         [self makeSubViewsAction];
@@ -75,6 +78,85 @@
     }
     return self;
 }
+
+- (void)makeSubViewsAction {
+    [self.playOrPauseBtn addTarget:self action:@selector(playPauseButtonClickAction:) forControlEvents:UIControlEventTouchUpInside];
+    [self.fullScreenBtn addTarget:self action:@selector(fullScreenButtonClickAction:) forControlEvents:UIControlEventTouchUpInside];
+}
+
+#pragma mark - ZFSliderViewDelegate
+
+- (void)sliderTouchBegan:(float)value {
+    self.slider.isdragging = YES;
+}
+
+- (void)sliderTouchEnded:(float)value {
+    if (self.player.totalTime > 0) {
+        @weakify(self)
+        [self.player seekToTime:self.player.totalTime*value completionHandler:^(BOOL finished) {
+            @strongify(self)
+            if (finished) {
+                self.slider.isdragging = NO;
+            }
+        }];
+        if (self.seekToPlay) {
+            [self.player.currentPlayerManager play];
+        }
+    } else {
+        self.slider.isdragging = NO;
+    }
+    if (self.sliderValueChanged) self.sliderValueChanged(value);
+}
+
+- (void)sliderValueChanged:(float)value {
+    if (self.player.totalTime == 0) {
+        self.slider.value = 0;
+        return;
+    }
+    self.slider.isdragging = YES;
+    NSString *currentTimeString = [ZFUtilities convertTimeSecond:self.player.totalTime*value];
+    self.currentTimeLabel.text = currentTimeString;
+    if (self.sliderValueChanging) self.sliderValueChanging(value,self.slider.isForward);
+}
+
+- (void)sliderTapped:(float)value {
+    if (self.player.totalTime > 0) {
+        self.slider.isdragging = YES;
+        @weakify(self)
+        [self.player seekToTime:self.player.totalTime*value completionHandler:^(BOOL finished) {
+            @strongify(self)
+            if (finished) {
+                self.slider.isdragging = NO;
+                [self.player.currentPlayerManager play];
+            }
+        }];
+    } else {
+        self.slider.isdragging = NO;
+        self.slider.value = 0;
+    }
+}
+
+#pragma mark - action
+
+- (void)playPauseButtonClickAction:(UIButton *)sender {
+    [self playOrPause];
+}
+
+- (void)fullScreenButtonClickAction:(UIButton *)sender {
+    [self.player enterFullScreen:YES animated:YES];
+}
+
+/// 根据当前播放状态取反
+- (void)playOrPause {
+    self.playOrPauseBtn.selected = !self.playOrPauseBtn.isSelected;
+    self.playOrPauseBtn.isSelected? [self.player.currentPlayerManager play]: [self.player.currentPlayerManager pause];
+}
+
+- (void)playBtnSelectedState:(BOOL)selected {
+    self.playOrPauseBtn.selected = selected;
+}
+
+#pragma mark - 添加子控件约束
 
 - (void)layoutSubviews {
     [super layoutSubviews];
@@ -112,11 +194,18 @@
     self.playOrPauseBtn.frame = CGRectMake(min_x, min_y, min_w, min_h);
     self.playOrPauseBtn.center = self.center;
     
-    min_x = min_margin;
+    min_x = min_margin + 28;
     min_w = 62;
     min_h = 28;
     min_y = (self.bottomToolView.zf_height - min_h)/2;
     self.currentTimeLabel.frame = CGRectMake(min_x, min_y, min_w, min_h);
+    
+    min_w = 30;
+    min_h = min_w;
+    min_x = min_margin;
+    min_y = 0;
+    self.muteBtn.frame = CGRectMake(min_x, min_y, min_w, min_h);
+    self.muteBtn.zf_centerY = self.currentTimeLabel.zf_centerY;
     
     min_w = 28;
     min_h = min_w;
@@ -150,76 +239,7 @@
     }
 }
 
-- (void)makeSubViewsAction {
-    [self.playOrPauseBtn addTarget:self action:@selector(playPauseButtonClickAction:) forControlEvents:UIControlEventTouchUpInside];
-    [self.fullScreenBtn addTarget:self action:@selector(fullScreenButtonClickAction:) forControlEvents:UIControlEventTouchUpInside];
-}
-
-#pragma mark - action
-
-- (void)playPauseButtonClickAction:(UIButton *)sender {
-    [self playOrPause];
-}
-
-- (void)fullScreenButtonClickAction:(UIButton *)sender {
-    [self.player enterFullScreen:YES animated:YES];
-}
-
-/// 根据当前播放状态取反
-- (void)playOrPause {
-    self.playOrPauseBtn.selected = !self.playOrPauseBtn.isSelected;
-    self.playOrPauseBtn.isSelected? [self.player.currentPlayerManager play]: [self.player.currentPlayerManager pause];
-}
-
-- (void)playBtnSelectedState:(BOOL)selected {
-    self.playOrPauseBtn.selected = selected;
-}
-
-#pragma mark - ZFSliderViewDelegate
-
-- (void)sliderTouchBegan:(float)value {
-    self.slider.isdragging = YES;
-}
-
-- (void)sliderTouchEnded:(float)value {
-    if (self.player.totalTime > 0) {
-        self.slider.isdragging = YES;
-        if (self.sliderValueChanging) self.sliderValueChanging(value, self.slider.isForward);
-        @weakify(self)
-        [self.player seekToTime:self.player.totalTime*value completionHandler:^(BOOL finished) {
-            @strongify(self)
-            if (finished) {
-                self.slider.isdragging = NO;
-                if (self.sliderValueChanged) self.sliderValueChanged(value);
-            }
-        }];
-        if (self.seekToPlay) {
-            [self.player.currentPlayerManager play];
-        }
-    } else {
-        self.slider.isdragging = NO;
-        self.slider.value = 0;
-    }
-}
-
-- (void)sliderValueChanged:(float)value {
-    if (self.player.totalTime == 0) {
-        self.slider.value = 0;
-        return;
-    }
-    self.slider.isdragging = YES;
-    NSString *currentTimeString = [ZFUtilities convertTimeSecond:self.player.totalTime*value];
-    self.currentTimeLabel.text = currentTimeString;
-    if (self.sliderValueChanging) self.sliderValueChanging(value,self.slider.isForward);
-}
-
-- (void)sliderTapped:(float)value {
-    [self sliderTouchEnded:value];
-    NSString *currentTimeString = [ZFUtilities convertTimeSecond:self.player.totalTime*value];
-    self.currentTimeLabel.text = currentTimeString;
-}
-
-#pragma mark - public method 
+#pragma mark -
 
 /** 重置ControlView */
 - (void)resetControlView {
@@ -296,6 +316,19 @@
     [UIView animateWithDuration:0.3 animations:^{
         self.slider.sliderBtn.transform = CGAffineTransformIdentity;
     }];
+}
+
+- (void)addMuteBtnSel:(SEL)selector actionTaget:(id)target {
+    __weak typeof(target)weakTarget = target;
+    [self.muteBtn addTarget:weakTarget action:selector forControlEvents:UIControlEventTouchUpInside];
+}
+
+- (void)changeMuteStatus:(BOOL)isMute {
+    NSString *imageStr = @"ijk_mute";
+    if (!isMute) {
+        imageStr = @"ijk_volume";
+    }
+    [self.muteBtn setImage:ZFPlayer_Image(imageStr) forState:UIControlStateNormal];
 }
 
 #pragma mark - getter
@@ -375,6 +408,14 @@
         [_fullScreenBtn setImage:ZFPlayer_Image(@"ZFPlayer_fullscreen") forState:UIControlStateNormal];
     }
     return _fullScreenBtn;
+}
+
+- (UIButton *)muteBtn {
+    if (!_muteBtn) {
+        _muteBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_muteBtn setImage:ZFPlayer_Image(@"ijk_mute") forState:UIControlStateNormal];
+    }
+    return _muteBtn;
 }
 
 @end
