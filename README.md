@@ -20,12 +20,12 @@ Before this, you used ZFPlayer, are you worried about encapsulating avplayer ins
 
 ![ZFPlayer思维导图](https://upload-images.jianshu.io/upload_images/635942-e99d76498cb01afb.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-## Requirements
+## 🔨 Requirements
 
 - iOS 7+
 - Xcode 8+
 
-## Installation
+## 📲 Installation
 
 ZFPlayer is available through [CocoaPods](https://cocoapods.org). To install it,use player template simply add the following line to your Podfile:
 
@@ -43,7 +43,6 @@ Use AVPlayer simply add the following line to your Podfile:
 ```objc
 pod 'ZFPlayer/AVPlayer', '~> 3.0'
 ```
-如果使用AVPlayer边下边播可以参考使用[KTVHTTPCache](https://github.com/ChangbaDevs/KTVHTTPCache)
 
 Use ijkplayer simply add the following line to your Podfile:
 
@@ -59,7 +58,10 @@ pod 'ZFPlayer/KSYMediaPlayer', '~> 3.0'
 ```
 [KSYMediaPlayer SDK](https://github.com/ksvc/KSYMediaPlayer_iOS) support cocoapods
 
-## Usage introduce
+
+边下边播可以参考使用[KTVHTTPCache](https://github.com/ChangbaDevs/KTVHTTPCache)
+
+## 🐒 Usage
 
 ####  ZFPlayerController
 Main classes,normal style initialization and list style initialization (tableView, collection,scrollView)
@@ -96,9 +98,8 @@ player.controlView = controlView;
 ```
 
 
-## Picture demonstration
+## 📷 Screenshots
 
 ![Picture effect](https://upload-images.jianshu.io/upload_images/635942-1b0e23b7f5eabd9e.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
-
 
 
