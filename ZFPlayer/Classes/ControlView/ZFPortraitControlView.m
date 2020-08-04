@@ -26,9 +26,9 @@
 #import "UIView+ZFFrame.h"
 #import "ZFUtilities.h"
 #if __has_include(<ZFPlayer/ZFPlayer.h>)
-#import <ZFPlayer/ZFPlayer.h>
+#import <ZFPlayer/ZFPlayerConst.h>
 #else
-#import "ZFPlayer.h"
+#import "ZFPlayerConst.h"
 #endif
 
 @interface ZFPortraitControlView () <ZFSliderViewDelegate>
@@ -40,16 +40,16 @@
 @property (nonatomic, strong) UILabel *titleLabel;
 /// 播放或暂停按钮
 @property (nonatomic, strong) UIButton *playOrPauseBtn;
-/// 播放的当前时间
+/// 播放的当前时间 
 @property (nonatomic, strong) UILabel *currentTimeLabel;
 /// 滑杆
 @property (nonatomic, strong) ZFSliderView *slider;
 /// 视频总时间
 @property (nonatomic, strong) UILabel *totalTimeLabel;
-/// 全屏按钮
-@property (nonatomic, strong) UIButton *fullScreenBtn;
 
 @property (nonatomic, strong) UIButton *muteBtn;
+/// 全屏按钮
+@property (nonatomic, strong) UIButton *fullScreenBtn;
 
 @property (nonatomic, assign) BOOL isShow;
 
@@ -319,6 +319,13 @@
     [UIView animateWithDuration:0.3 animations:^{
         self.slider.sliderBtn.transform = CGAffineTransformIdentity;
     }];
+}
+
+#pragma mark - setter
+
+- (void)setFullScreenMode:(ZFFullScreenMode)fullScreenMode {
+    _fullScreenMode = fullScreenMode;
+    self.player.orientationObserver.fullScreenMode = fullScreenMode;
 }
 
 #pragma mark - getter

@@ -46,7 +46,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// 播放或暂停按钮
 @property (nonatomic, strong, readonly) UIButton *playOrPauseBtn;
 
-/// 播放的当前时间
+/// 播放的当前时间 
 @property (nonatomic, strong, readonly) UILabel *currentTimeLabel;
 
 /// 滑杆
@@ -69,6 +69,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 如果是暂停状态，seek完是否播放，默认YES
 @property (nonatomic, assign) BOOL seekToPlay;
+
+/// 全屏模式
+@property (nonatomic, assign) ZFFullScreenMode fullScreenMode;
 
 /// 重置控制层
 - (void)resetControlView;

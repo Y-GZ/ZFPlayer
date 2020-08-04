@@ -25,12 +25,15 @@
 #import "ZFIJKPlayerManager.h"
 #if __has_include(<ZFPlayer/ZFPlayer.h>)
 #import <ZFPlayer/ZFPlayer.h>
+#import <ZFPlayer/ZFPlayerConst.h>
 #else
 #import "ZFPlayer.h"
+#import "ZFPlayerConst.h"
 #endif
 #if __has_include(<IJKMediaFramework/IJKMediaFramework.h>)
 
 @interface ZFIJKPlayerManager ()
+
 @property (nonatomic, strong) IJKFFMoviePlayerController *player;
 @property (nonatomic, strong) IJKFFOptions *options;
 @property (nonatomic, assign) CGFloat lastVolume;
@@ -118,6 +121,7 @@
     self.player = nil;
     _assetURL = nil;
     [self.timer invalidate];
+    self.presentationSize = CGSizeZero;
     self.timer = nil;
     _isPlaying = NO;
     _isPreparedToPlay = NO;
@@ -157,11 +161,7 @@
     self.player = [[IJKFFMoviePlayerController alloc] initWithContentURL:self.assetURL withOptions:self.options];
     self.player.shouldAutoplay = self.shouldAutoPlay;
     [self.player prepareToPlay];
-    
-    [self.view insertSubview:self.player.view atIndex:1];
-    self.player.view.frame = self.view.bounds;
-    self.player.view.backgroundColor = [UIColor clearColor];
-    self.player.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    self.view.playerView = self.player.view;
     self.scalingMode = self->_scalingMode;
     [self addPlayerNotificationObservers];
 }
@@ -234,6 +234,8 @@
         case IJKMPMovieFinishReasonPlaybackEnded: {
             ZFPlayerLog(@"playbackStateDidChange: 播放完毕: %d\n", reason);
             self.playState = ZFPlayerPlayStatePlayStopped;
+            [self.timer invalidate];
+            self.timer = nil;
             if (self.playerDidToEnd) self.playerDidToEnd(self);
         }
             break;
@@ -349,7 +351,8 @@
 
 /// 视频的尺寸变化了
 - (void)sizeAvailableChange:(NSNotification *)notify {
-    self->_presentationSize = self.player.naturalSize;
+    self.presentationSize = self.player.naturalSize;
+    self.view.presentationSize = self.presentationSize;
     if (self.presentationSizeChanged) {
         self.presentationSizeChanged(self, self->_presentationSize);
     }
@@ -357,7 +360,7 @@
 
 #pragma mark - getter
 
-- (UIView *)view {
+- (ZFPlayerView *)view {
     if (!_view) {
         _view = [[ZFPlayerView alloc] init];
     }
@@ -418,6 +421,7 @@
 
 - (void)setScalingMode:(ZFPlayerScalingMode)scalingMode {
     _scalingMode = scalingMode;
+    self.view.scalingMode = scalingMode;
     switch (scalingMode) {
         case ZFPlayerScalingModeNone:
             self.player.scalingMode = IJKMPMovieScalingModeNone;

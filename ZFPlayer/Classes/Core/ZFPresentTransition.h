@@ -1,8 +1,8 @@
 //
-//  ZFPlayerView.h
+//  ZFPresentTransition.h
 //  ZFPlayer
 //
-// Copyright (c) 2016年 任子丰 ( http://github.com/renzifeng )
+// Copyright (c) 2020年 任子丰 ( http://github.com/renzifeng )
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,16 +23,27 @@
 // THE SOFTWARE.
 
 #import <UIKit/UIKit.h>
-#import "ZFPlayerConst.h"
+#import "ZFOrientationObserver.h"
 
-@interface ZFPlayerView : UIView
-/// player content view.
-@property (nonatomic, strong) UIView *playerView;
-/// Determines how the content scales to fit the view.
-@property (nonatomic, assign) ZFPlayerScalingMode scalingMode;
-/// The cover for playerView.
-@property (nonatomic, strong, readonly) UIImageView *coverImageView;
-/// The video size.
-@property (nonatomic, assign) CGSize presentationSize;
+typedef NS_ENUM(NSUInteger, ZFPresentTransitionType) {
+    ZFPresentTransitionTypePresent,
+    ZFPresentTransitionTypeDismiss,
+};
+
+@interface ZFPresentTransition : NSObject<UIViewControllerAnimatedTransitioning>
+
+@property (nonatomic, weak) id<ZFPortraitOrientationDelegate> delagate;
+
+@property (nonatomic, assign) CGRect contentFullScreenRect;
+
+@property (nonatomic, assign, getter=isFullScreen) BOOL fullScreen;
+
+@property (nonatomic, assign) BOOL interation;
+
+@property (nonatomic, assign) NSTimeInterval duration;
+
+- (void)transitionWithTransitionType:(ZFPresentTransitionType)type
+                         contentView:(UIView *)contentView
+                       containerView:(UIView *)containerView;
 
 @end
