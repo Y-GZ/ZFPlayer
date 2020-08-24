@@ -180,9 +180,9 @@ Scroll to indexPath with position.
 
 - (void)_scrollViewDidStopScroll {
     self.zf_scrollDirection = ZFPlayerScrollDirectionNone;
-    @weakify(self)
+    @zf_weakify(self)
     [self zf_filterShouldPlayCellWhileScrolled:^(NSIndexPath * _Nonnull indexPath) {
-        @strongify(self)
+        @zf_strongify(self)
         if (self.zf_scrollViewDidStopScrollCallback) self.zf_scrollViewDidStopScrollCallback(indexPath);
         if (self.zf_scrollViewDidEndScrollingCallback) self.zf_scrollViewDidEndScrollingCallback(indexPath);
     }];
@@ -428,20 +428,7 @@ Scroll to indexPath with position.
         visiableCells = [tableView visibleCells];
         // First visible cell indexPath
         indexPath = tableView.indexPathsForVisibleRows.firstObject;
-        if (self.contentOffset.y <= 0 && (!self.zf_playingIndexPath || [indexPath compare:self.zf_playingIndexPath] == NSOrderedSame)) {
-            UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
-            UIView *playerView = [cell viewWithTag:self.zf_containerViewTag];
-            if (playerView && !playerView.hidden && playerView.alpha > 0.01) {
-                if (self.zf_scrollViewDidScrollCallback) self.zf_scrollViewDidScrollCallback(indexPath);
-                if (handler) handler(indexPath);
-                self.zf_shouldPlayIndexPath = indexPath;
-                return;
-            }
-        }
-        
-        // Last visible cell indexPath
-        indexPath = tableView.indexPathsForVisibleRows.lastObject;
-        if (self.contentOffset.y + self.frame.size.height >= self.contentSize.height && (!self.zf_playingIndexPath || [indexPath compare:self.zf_playingIndexPath] == NSOrderedSame)) {
+        if ((self.contentOffset.y <= 0 || self.contentOffset.y + self.frame.size.height >= self.contentSize.height) && (!self.zf_playingIndexPath || [indexPath compare:self.zf_playingIndexPath] == NSOrderedSame)) {
             UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
             UIView *playerView = [cell viewWithTag:self.zf_containerViewTag];
             if (playerView && !playerView.hidden && playerView.alpha > 0.01) {
@@ -466,20 +453,7 @@ Scroll to indexPath with position.
         
         // First visible cell indexPath
         indexPath = sortedIndexPaths.firstObject;
-        if (self.contentOffset.y <= 0 && (!self.zf_playingIndexPath || [indexPath compare:self.zf_playingIndexPath] == NSOrderedSame)) {
-            UICollectionViewCell *cell = [collectionView cellForItemAtIndexPath:indexPath];
-            UIView *playerView = [cell viewWithTag:self.zf_containerViewTag];
-            if (playerView && !playerView.hidden && playerView.alpha > 0.01) {
-                if (self.zf_scrollViewDidScrollCallback) self.zf_scrollViewDidScrollCallback(indexPath);
-                if (handler) handler(indexPath);
-                self.zf_shouldPlayIndexPath = indexPath;
-                return;
-            }
-        }
-        
-        // Last visible cell indexPath
-        indexPath = sortedIndexPaths.lastObject;
-        if (self.contentOffset.y + self.frame.size.height >= self.contentSize.height && (!self.zf_playingIndexPath || [indexPath compare:self.zf_playingIndexPath] == NSOrderedSame)) {
+        if ((self.contentOffset.y <= 0 || self.contentOffset.y + self.frame.size.height >= self.contentSize.height) && (!self.zf_playingIndexPath || [indexPath compare:self.zf_playingIndexPath] == NSOrderedSame)) {
             UICollectionViewCell *cell = [collectionView cellForItemAtIndexPath:indexPath];
             UIView *playerView = [cell viewWithTag:self.zf_containerViewTag];
             if (playerView && !playerView.hidden && playerView.alpha > 0.01) {
@@ -504,9 +478,9 @@ Scroll to indexPath with position.
     __block NSIndexPath *finalIndexPath = nil;
     /// The final distance from the center line.
     __block CGFloat finalSpace = 0;
-    @weakify(self)
+    @zf_weakify(self)
     [cells enumerateObjectsUsingBlock:^(UIView *cell, NSUInteger idx, BOOL * _Nonnull stop) {
-        @strongify(self)
+        @zf_strongify(self)
         UIView *playerView = [cell viewWithTag:self.zf_containerViewTag];
         if (!playerView || playerView.hidden || playerView.alpha <= 0.01) return;
         CGRect rect1 = [playerView convertRect:playerView.frame toView:self];
@@ -558,20 +532,7 @@ Scroll to indexPath with position.
         visiableCells = [tableView visibleCells];
         // First visible cell indexPath
         indexPath = tableView.indexPathsForVisibleRows.firstObject;
-        if (self.contentOffset.x <= 0 && (!self.zf_playingIndexPath || [indexPath compare:self.zf_playingIndexPath] == NSOrderedSame)) {
-            UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
-            UIView *playerView = [cell viewWithTag:self.zf_containerViewTag];
-            if (playerView && !playerView.hidden && playerView.alpha > 0.01) {
-                if (self.zf_scrollViewDidScrollCallback) self.zf_scrollViewDidScrollCallback(indexPath);
-                if (handler) handler(indexPath);
-                self.zf_shouldPlayIndexPath = indexPath;
-                return;
-            }
-        }
-        
-        // Last visible cell indexPath
-        indexPath = tableView.indexPathsForVisibleRows.lastObject;
-        if (self.contentOffset.x + self.frame.size.width >= self.contentSize.width && (!self.zf_playingIndexPath || [indexPath compare:self.zf_playingIndexPath] == NSOrderedSame)) {
+        if ((self.contentOffset.x <= 0 || self.contentOffset.x + self.frame.size.width >= self.contentSize.width) && (!self.zf_playingIndexPath || [indexPath compare:self.zf_playingIndexPath] == NSOrderedSame)) {
             UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
             UIView *playerView = [cell viewWithTag:self.zf_containerViewTag];
             if (playerView && !playerView.hidden && playerView.alpha > 0.01) {
@@ -596,20 +557,7 @@ Scroll to indexPath with position.
         
         // First visible cell indexPath
         indexPath = sortedIndexPaths.firstObject;
-        if (self.contentOffset.x <= 0 && (!self.zf_playingIndexPath || [indexPath compare:self.zf_playingIndexPath] == NSOrderedSame)) {
-            UICollectionViewCell *cell = [collectionView cellForItemAtIndexPath:indexPath];
-            UIView *playerView = [cell viewWithTag:self.zf_containerViewTag];
-            if (playerView && !playerView.hidden && playerView.alpha > 0.01) {
-                if (self.zf_scrollViewDidScrollCallback) self.zf_scrollViewDidScrollCallback(indexPath);
-                if (handler) handler(indexPath);
-                self.zf_shouldPlayIndexPath = indexPath;
-                return;
-            }
-        }
-        
-        // Last visible cell indexPath
-        indexPath = sortedIndexPaths.lastObject;
-        if (self.contentOffset.x + self.frame.size.width >= self.contentSize.width && (!self.zf_playingIndexPath || [indexPath compare:self.zf_playingIndexPath] == NSOrderedSame)) {
+        if ((self.contentOffset.x <= 0 || self.contentOffset.x + self.frame.size.width >= self.contentSize.width) && (!self.zf_playingIndexPath || [indexPath compare:self.zf_playingIndexPath] == NSOrderedSame)) {
             UICollectionViewCell *cell = [collectionView cellForItemAtIndexPath:indexPath];
             UIView *playerView = [cell viewWithTag:self.zf_containerViewTag];
             if (playerView && !playerView.hidden && playerView.alpha > 0.01) {
@@ -634,9 +582,9 @@ Scroll to indexPath with position.
     __block NSIndexPath *finalIndexPath = nil;
     /// The final distance from the center line.
     __block CGFloat finalSpace = 0;
-    @weakify(self)
+    @zf_weakify(self)
     [cells enumerateObjectsUsingBlock:^(UIView *cell, NSUInteger idx, BOOL * _Nonnull stop) {
-        @strongify(self)
+        @zf_strongify(self)
         UIView *playerView = [cell viewWithTag:self.zf_containerViewTag];
         if (!playerView || playerView.hidden || playerView.alpha <= 0.01) return;
         CGRect rect1 = [playerView convertRect:playerView.frame toView:self];
@@ -722,9 +670,9 @@ Scroll to indexPath with position.
 
 - (void)zf_filterShouldPlayCellWhileScrolled:(void (^ __nullable)(NSIndexPath *indexPath))handler {
     if (!self.zf_shouldAutoPlay) return;
-    @weakify(self)
+    @zf_weakify(self)
     [self zf_filterShouldPlayCellWhileScrolling:^(NSIndexPath *indexPath) {
-        @strongify(self)
+        @zf_strongify(self)
         /// 如果当前控制器已经消失，直接return
         if (self.zf_viewControllerDisappear) return;
         if ([ZFReachabilityManager sharedManager].isReachableViaWWAN && !self.zf_WWANAutoPlay) {
@@ -788,7 +736,10 @@ Scroll to indexPath with position.
 }
 
 - (BOOL)zf_stopPlay {
-    return [objc_getAssociatedObject(self, _cmd) boolValue];
+    NSNumber *number = objc_getAssociatedObject(self, _cmd);
+    if (number) return number.boolValue;
+    self.zf_stopPlay = YES;
+    return YES;
 }
 
 - (BOOL)zf_stopWhileNotVisible {

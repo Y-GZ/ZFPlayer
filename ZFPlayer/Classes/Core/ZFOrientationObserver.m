@@ -99,6 +99,9 @@
 /// current device orientation observer is activie.
 @property (nonatomic, assign) BOOL activeDeviceObserver;
 
+/// Force Rotaion, default NO.
+@property (nonatomic, assign) BOOL forceRotaion;
+
 @end
 
 @implementation ZFOrientationObserver
@@ -114,7 +117,6 @@
         _rotateType = ZFRotateTypeNormal;
         _currentOrientation = UIInterfaceOrientationPortrait;
         _portraitFullScreenMode = ZFPortraitFullScreenModeScaleToFill;
-        _forceDeviceOrientation = YES;
         _disablePortraitGestureTypes = ZFDisablePortraitGestureTypesAll;
     }
     return self;
@@ -139,11 +141,13 @@
 }
 
 - (void)addDeviceOrientationObserver {
-    self.activeDeviceObserver = YES;
-    if (![UIDevice currentDevice].generatesDeviceOrientationNotifications) {
-        [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
+    if (self.allowOrientationRotation) {
+        self.activeDeviceObserver = YES;
+        if (![UIDevice currentDevice].generatesDeviceOrientationNotifications) {
+            [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
+        }
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleDeviceOrientationChange) name:UIDeviceOrientationDidChangeNotification object:nil];
     }
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleDeviceOrientationChange) name:UIDeviceOrientationDidChangeNotification object:nil];
 }
 
 - (void)removeDeviceOrientationObserver {
@@ -210,6 +214,7 @@
 - (void)rotateToOrientation:(UIInterfaceOrientation)orientation animated:(BOOL)animated completion:(void(^ __nullable)(void))completion {
     if (self.fullScreenMode == ZFFullScreenModePortrait) return;
     _currentOrientation = orientation;
+    self.forceRotaion = YES;
     if (UIInterfaceOrientationIsLandscape(orientation)) {
         if (!self.fullScreen) {
             UIView *containerView = nil;
@@ -219,6 +224,17 @@
                 containerView = self.containerView;
             }
             CGRect targetRect = [self.view convertRect:self.view.frame toView:containerView.window];
+            
+            if (!self.window) {
+                self.window = [ZFLandscapeWindow new];
+                self.window.landscapeViewController.delegate = self;
+                if (@available(iOS 9.0, *)) {
+                    [self.window.rootViewController loadViewIfNeeded];
+                } else {
+                    [self.window.rootViewController view];
+                }
+            }
+            
             self.window.landscapeViewController.targetRect = targetRect;
             self.window.landscapeViewController.contentView = self.view;
             self.window.landscapeViewController.containerView = self.containerView;
@@ -229,7 +245,10 @@
         self.fullScreen = NO;
     }
     self.window.landscapeViewController.disableAnimations = !animated;
+    @zf_weakify(self)
     self.window.landscapeViewController.rotatingCompleted = ^{
+        @zf_strongify(self)
+        self.forceRotaion = NO;
         if (completion) completion();
     };
     
@@ -295,20 +314,6 @@
     return self.supportInterfaceOrientation & ZFInterfaceOrientationMaskLandscapeRight;
 }
 
-- (void)_fixNavigationBarLayout {
-    UINavigationController *nav = [self _lookupResponderForClass:UINavigationController.class];
-    [nav viewDidAppear:NO];
-    [nav.navigationBar layoutSubviews];
-}
-
-- (__kindof UIResponder *_Nullable)_lookupResponderForClass:(Class)cls {
-    __kindof UIResponder *_Nullable next = self.containerView.nextResponder;
-    while ( next != nil && [next isKindOfClass:cls] == NO ) {
-        next = next.nextResponder;
-    }
-    return next;
-}
-
 - (BOOL)_isSupported:(UIInterfaceOrientation)orientation {
     switch (orientation) {
         case UIInterfaceOrientationPortrait:
@@ -323,25 +328,8 @@
     return NO;
 }
 
-#pragma mark - ZFLandscapeViewControllerDelegate
-
-- (BOOL)ls_shouldAutorotate {
-    UIInterfaceOrientation currentOrientation = (UIInterfaceOrientation)[UIDevice currentDevice].orientation;
-    if (![self _isSupported:currentOrientation]) {
-        return NO;
-    }
-    
-    if (!self.forceDeviceOrientation) {
-        if (!self.allowOrientationRotation || !self.activeDeviceObserver) {
-            return NO;
-        }
-    }
-    
-    if (self.fullScreenMode == ZFFullScreenModePortrait) {
-        return NO;
-    }
-    
-    if (UIInterfaceOrientationIsLandscape(currentOrientation)) {
+- (void)_rotationToLandscapeOrientation:(UIInterfaceOrientation)orientation {
+    if (UIInterfaceOrientationIsLandscape(orientation)) {
         UIWindow *keyWindow = UIApplication.sharedApplication.keyWindow;
         if (keyWindow != self.window && self.previousKeyWindow != keyWindow) {
             self.previousKeyWindow = UIApplication.sharedApplication.keyWindow;
@@ -351,13 +339,64 @@
             [self.window makeKeyAndVisible];
         }
     }
+}
+
+- (void)_rotationToPortraitOrientation:(UIInterfaceOrientation)orientation {
+    if (orientation == UIInterfaceOrientationPortrait && !self.window.hidden) {
+        UIView *containerView = nil;
+        if (self.rotateType == ZFRotateTypeCell) {
+            containerView = [self.cell viewWithTag:self.playerViewTag];
+        } else {
+            containerView = self.containerView;
+        }
+        UIView *snapshot = [self.view snapshotViewAfterScreenUpdates:NO];
+        snapshot.frame = containerView.bounds;
+        [containerView addSubview:snapshot];
+        [self performSelector:@selector(_contentViewAdd:) onThread:NSThread.mainThread withObject:containerView waitUntilDone:NO modes:@[NSDefaultRunLoopMode]];
+        [self performSelector:@selector(_makeKeyAndVisible:) onThread:NSThread.mainThread withObject:snapshot waitUntilDone:NO modes:@[NSDefaultRunLoopMode]];
+    }
+}
+
+- (void)_contentViewAdd:(UIView *)containerView {
+    [containerView addSubview:self.view];
+    self.view.frame = containerView.bounds;
+    [self.view layoutIfNeeded];
+}
+
+- (void)_makeKeyAndVisible:(UIView *)snapshot {
+    [snapshot removeFromSuperview];
+    UIWindow *previousKeyWindow = self.previousKeyWindow ?: UIApplication.sharedApplication.windows.firstObject;
+    [previousKeyWindow makeKeyAndVisible];
+    self.previousKeyWindow = nil;
+    self.window.hidden = YES;
+}
+
+#pragma mark - ZFLandscapeViewControllerDelegate
+
+- (BOOL)ls_shouldAutorotate {
+    if (self.fullScreenMode == ZFFullScreenModePortrait) {
+        return NO;
+    }
+    
+    UIInterfaceOrientation currentOrientation = (UIInterfaceOrientation)[UIDevice currentDevice].orientation;
+    if (![self _isSupported:currentOrientation]) {
+        return NO;
+    }
+    
+    if (self.forceRotaion) {
+        [self _rotationToLandscapeOrientation:currentOrientation];
+        return YES;
+    }
+    
+    if (!self.activeDeviceObserver) {
+        return NO;
+    }
+    
+    [self _rotationToLandscapeOrientation:currentOrientation];
     return YES;
 }
 
 - (void)ls_willRotateToOrientation:(UIInterfaceOrientation)orientation {
-    if (UIInterfaceOrientationIsPortrait(orientation)) {
-        [self performSelector:@selector(_fixNavigationBarLayout) onThread:NSThread.mainThread withObject:@(NO) waitUntilDone:NO];
-    }
     self.fullScreen = UIInterfaceOrientationIsLandscape(orientation);
     if (self.orientationWillChange) self.orientationWillChange(self, self.isFullScreen);
 }
@@ -365,18 +404,7 @@
 - (void)ls_didRotateFromOrientation:(UIInterfaceOrientation)orientation {
     if (self.orientationDidChanged) self.orientationDidChanged(self, self.isFullScreen);
     if (!self.isFullScreen) {
-        UIView *containerView = nil;
-        if (self.rotateType == ZFRotateTypeCell) {
-            containerView = [self.cell viewWithTag:self.playerViewTag];
-        } else {
-            containerView = self.containerView;
-        }
-        [containerView addSubview:self.view];
-        self.view.frame = containerView.bounds;
-        UIWindow *previousKeyWindow = self.previousKeyWindow ?: UIApplication.sharedApplication.windows.firstObject;
-        [previousKeyWindow makeKeyAndVisible];
-        self.previousKeyWindow = nil;
-        self.window.hidden = YES;
+        [self _rotationToPortraitOrientation:UIInterfaceOrientationPortrait];
     }
 }
 
@@ -393,22 +421,9 @@
 
 #pragma mark - getter
 
-- (ZFLandscapeWindow *)window {
-    if (!_window) {
-        _window = [ZFLandscapeWindow new];
-        _window.landscapeViewController.delegate = self;
-        if (@available(iOS 9.0, *)) {
-            [_window.rootViewController loadViewIfNeeded];
-        } else {
-            [_window.rootViewController view];
-        }
-    }
-    return _window;
-}
-
 - (ZFPortraitViewController *)portraitViewController {
     if (!_portraitViewController) {
-        @weakify(self)
+        @zf_weakify(self)
         _portraitViewController = [[ZFPortraitViewController alloc] init];
         if (@available(iOS 9.0, *)) {
             [_portraitViewController loadViewIfNeeded];
@@ -416,17 +431,17 @@
             [_portraitViewController view];
         }
         _portraitViewController.orientationWillChange = ^(BOOL isFullScreen) {
-            @strongify(self)
+            @zf_strongify(self)
             self.fullScreen = isFullScreen;
             if (self.orientationWillChange) self.orientationWillChange(self, isFullScreen);
         };
         _portraitViewController.orientationDidChanged = ^(BOOL isFullScreen) {
-            @strongify(self)
+            @zf_strongify(self)
             self.fullScreen = isFullScreen;
             if (self.orientationDidChanged) self.orientationDidChanged(self, isFullScreen);
         };
     }
-    return _portraitViewController;;
+    return _portraitViewController;
 }
 
 #pragma mark - setter
@@ -505,7 +520,7 @@
         return;
     }
     _view = view;
-    if (self.fullScreenMode == ZFFullScreenModeLandscape) {
+    if (self.fullScreenMode == ZFFullScreenModeLandscape && self.window) {
         self.window.landscapeViewController.contentView = view;
     } else if (self.fullScreenMode == ZFFullScreenModePortrait) {
         self.portraitViewController.contentView = view;
@@ -514,13 +529,22 @@
 
 - (void)setContainerView:(UIView *)containerView {
     if (containerView == _containerView) {
-          return;
-      }
+        return;
+    }
     _containerView = containerView;
     if (self.fullScreenMode == ZFFullScreenModeLandscape) {
         self.window.landscapeViewController.containerView = containerView;
     } else if (self.fullScreenMode == ZFFullScreenModePortrait) {
         self.portraitViewController.containerView = containerView;
+    }
+}
+
+- (void)setAllowOrientationRotation:(BOOL)allowOrientationRotation {
+    _allowOrientationRotation = allowOrientationRotation;
+    if (allowOrientationRotation) {
+        [self addDeviceOrientationObserver];
+    } else {
+        [self removeDeviceOrientationObserver];
     }
 }
 

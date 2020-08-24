@@ -94,9 +94,6 @@ typedef NS_OPTIONS(NSUInteger, ZFDisablePortraitGestureTypes) {
 /// Container view of a small screen state player.
 @property (nonatomic, weak) UIView *containerView;
 
-/// Use device orientation, default YES.
-@property (nonatomic, assign) BOOL forceDeviceOrientation;
-
 /// The block invoked When player will rotate.
 @property (nonatomic, copy, nullable) void(^orientationWillChange)(ZFOrientationObserver *observer, BOOL isFullScreen);
 
