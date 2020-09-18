@@ -25,6 +25,7 @@
 #import "ZFLandScapeControlView.h"
 #import "UIView+ZFFrame.h"
 #import "ZFUtilities.h"
+#import "UIImageView+ZFCache.h"
 #if __has_include(<ZFPlayer/ZFPlayer.h>)
 #import <ZFPlayer/ZFPlayerConst.h>
 #else
@@ -53,6 +54,14 @@
 
 @property (nonatomic, strong) UIButton *muteBtn;
 
+@property (nonatomic, strong) UIButton *giftBtn;
+
+@property (nonatomic, strong) UIButton *moreBtn;
+
+@property (nonatomic, strong) UIImageView *avatarImage;
+
+@property (nonatomic, strong) UILabel *nameLabel;
+
 @property (nonatomic, assign) BOOL isShow;
 
 @end
@@ -67,7 +76,7 @@
     if (self = [super initWithFrame:frame]) {
         [self addSubview:self.topToolView];
         [self.topToolView addSubview:self.backBtn];
-        [self.topToolView addSubview:self.titleLabel];
+        [self.topToolView addSubview:self.moreBtn];
         [self addSubview:self.bottomToolView];
         [self.bottomToolView addSubview:self.playOrPauseBtn];
         [self.bottomToolView addSubview:self.currentTimeLabel];
@@ -75,7 +84,11 @@
         [self.bottomToolView addSubview:self.slider];
         [self.bottomToolView addSubview:self.totalTimeLabel];
         [self.bottomToolView addSubview:self.muteBtn];
+        [self addSubview:self.avatarImage];
+        [self addSubview:self.nameLabel];
         [self addSubview:self.lockBtn];
+        [self addSubview:self.titleLabel];
+        [self addSubview:self.giftBtn];
         
         // 设置子控件的响应事件
         [self makeSubViewsAction];
@@ -121,6 +134,9 @@
     self.titleLabel.frame = CGRectMake(min_x, min_y, min_w, min_h);
     self.titleLabel.zf_centerY = self.backBtn.zf_centerY;
     
+    self.moreBtn.frame = CGRectMake(self.topToolView.zf_right - 50, min_y, 44, 44);
+    self.moreBtn.zf_centerY = self.backBtn.zf_centerY;
+    
     min_h = iPhoneX ? 100 : 73;
     min_x = 0;
     min_y = min_view_h - min_h;
@@ -131,6 +147,11 @@
     min_y = 32;
     min_w = 30;
     min_h = 30;
+    
+    self.avatarImage.frame = CGRectMake(min_x, self.bottomToolView.zf_top - 40, 40, 40);
+    self.nameLabel.frame = CGRectMake(min_x + 50, self.avatarImage.zf_top, self.bottomToolView.zf_width - min_x - 116, 40);
+    self.titleLabel.frame = CGRectMake(min_x, self.avatarImage.zf_top - 30, self.bottomToolView.zf_width - min_x - 76, 20);
+    self.giftBtn.frame = CGRectMake(self.bottomToolView.zf_width - 66, self.avatarImage.zf_bottom - 50, 46, 46);
     
     self.muteBtn.frame = CGRectMake(min_x, min_y, min_w, min_h);
     min_x = self.muteBtn.zf_right + 8;
@@ -230,6 +251,16 @@
     [self.muteBtn addTarget:weakTarget action:selector forControlEvents:UIControlEventTouchUpInside];
 }
 
+- (void)addGiftBtnSel:(SEL)selector actionTaget:(id)target {
+    __weak typeof(target)weakTarget = target;
+    [self.giftBtn addTarget:weakTarget action:selector forControlEvents:UIControlEventTouchUpInside];
+}
+
+- (void)addMoreBtnSel:(SEL)selector actionTaget:(id)target {
+    __weak typeof(target)weakTarget = target;
+    [self.moreBtn addTarget:weakTarget action:selector forControlEvents:UIControlEventTouchUpInside];
+}
+
 - (void)changeMuteStatus:(BOOL)isMute {
     NSString *imageStr = @"ijk_mute";
     if (!isMute) {
@@ -292,7 +323,6 @@
     self.totalTimeLabel.text         = @"00:00";
     self.backgroundColor             = [UIColor clearColor];
     self.playOrPauseBtn.selected     = YES;
-    self.titleLabel.text             = @"";
     self.topToolView.alpha           = 1;
     self.bottomToolView.alpha        = 1;
     self.isShow                      = NO;
@@ -359,10 +389,20 @@
     self.slider.bufferValue = videoPlayer.bufferProgress;
 }
 
+- (void)showTitle:(NSString *)title hostAvatar:(NSString *_Nullable)avatar hostName:(NSString *_Nullable)name fullScreenMode:(ZFFullScreenMode)fullScreenMode {
+    self.titleLabel.text = title;
+    self.player.orientationObserver.fullScreenMode = fullScreenMode;
+    self.lockBtn.hidden = YES;
+    self.nameLabel.text = name;
+    if (avatar != nil) {
+        [self.avatarImage setImageWithURLString:avatar placeholderImageName:nil];
+    }
+}
+
 - (void)showTitle:(NSString *)title fullScreenMode:(ZFFullScreenMode)fullScreenMode {
     self.titleLabel.text = title;
     self.player.orientationObserver.fullScreenMode = fullScreenMode;
-    self.lockBtn.hidden = fullScreenMode == ZFFullScreenModePortrait;
+    self.lockBtn.hidden = YES;
 }
 
 /// 调节播放进度slider和当前时间更新
@@ -388,7 +428,7 @@
 - (void)setFullScreenMode:(ZFFullScreenMode)fullScreenMode {
     _fullScreenMode = fullScreenMode;
     self.player.orientationObserver.fullScreenMode = fullScreenMode;
-    self.lockBtn.hidden = fullScreenMode == ZFFullScreenModePortrait;
+    self.lockBtn.hidden = YES;
 }
 
 #pragma mark - getter
@@ -405,6 +445,7 @@
 - (UIButton *)backBtn {
     if (!_backBtn) {
         _backBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+        _backBtn.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 15);
         [_backBtn setImage:ZFPlayer_Image(@"ZFPlayer_back_full") forState:UIControlStateNormal];
     }
     return _backBtn;
@@ -414,7 +455,7 @@
     if (!_titleLabel) {
         _titleLabel = [[UILabel alloc] init];
         _titleLabel.textColor = [UIColor whiteColor];
-        _titleLabel.font = [UIFont systemFontOfSize:15.0];
+        _titleLabel.font = [UIFont systemFontOfSize:16.0 weight:UIFontWeightSemibold];
     }
     return _titleLabel;
 }
@@ -485,6 +526,44 @@
         [_muteBtn setImage:ZFPlayer_Image(@"ijk_mute") forState:UIControlStateNormal];
     }
     return _muteBtn;
+}
+
+- (UIButton *)giftBtn {
+    if (!_giftBtn) {
+        _giftBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_giftBtn setImage:[UIImage imageNamed:@"home_gift_send"] forState:UIControlStateNormal];
+    }
+    return _giftBtn;
+}
+
+- (UIButton *)moreBtn {
+    if (!_moreBtn) {
+        _moreBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_moreBtn setImage:[UIImage imageNamed:@"home_more_icon"] forState:UIControlStateNormal];
+        _moreBtn.tintColor = [UIColor whiteColor];
+    }
+    return _moreBtn;
+}
+
+- (UIImageView *)avatarImage {
+    if (!_avatarImage) {
+        _avatarImage = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, 40, 40)];
+        _avatarImage.contentMode = UIViewContentModeScaleAspectFill;
+        _avatarImage.layer.cornerRadius = 20;
+        _avatarImage.layer.masksToBounds = YES;
+        _avatarImage.layer.borderColor = [[UIColor whiteColor] CGColor];
+        _avatarImage.layer.borderWidth = 2;
+    }
+    return _avatarImage;
+}
+
+- (UILabel *)nameLabel {
+    if (!_nameLabel) {
+        _nameLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, 1, 40)];
+        _nameLabel.textColor = [UIColor whiteColor];
+        _nameLabel.font = [UIFont systemFontOfSize:14.0f];
+    }
+    return _nameLabel;
 }
 
 @end

@@ -103,6 +103,8 @@ NS_ASSUME_NONNULL_BEGIN
 /// 标题和全屏模式
 - (void)showTitle:(NSString *_Nullable)title fullScreenMode:(ZFFullScreenMode)fullScreenMode;
 
+- (void)showTitle:(NSString *)title hostAvatar:(NSString *_Nullable)avatar hostName:(NSString *_Nullable)name fullScreenMode:(ZFFullScreenMode)fullScreenMode;
+
 /// 根据当前播放状态取反
 - (void)playOrPause;
 
@@ -118,6 +120,10 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)addMuteBtnSel:(SEL)selector actionTaget:(id)target;
 
 - (void)changeMuteStatus:(BOOL)isMute;
+
+- (void)addGiftBtnSel:(SEL)selector actionTaget:(id)target;
+
+- (void)addMoreBtnSel:(SEL)selector actionTaget:(id)target;
 
 @end
 

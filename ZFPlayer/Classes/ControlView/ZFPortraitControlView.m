@@ -25,6 +25,7 @@
 #import "ZFPortraitControlView.h"
 #import "UIView+ZFFrame.h"
 #import "ZFUtilities.h"
+#import "UIImageView+ZFCache.h"
 #if __has_include(<ZFPlayer/ZFPlayer.h>)
 #import <ZFPlayer/ZFPlayerConst.h>
 #else
@@ -32,10 +33,13 @@
 #endif
 
 @interface ZFPortraitControlView () <ZFSliderViewDelegate>
+
 /// 底部工具栏
 @property (nonatomic, strong) UIView *bottomToolView;
 /// 顶部工具栏
 @property (nonatomic, strong) UIView *topToolView;
+/// 返回按钮
+@property (nonatomic, strong) UIButton *backBtn;
 /// 标题
 @property (nonatomic, strong) UILabel *titleLabel;
 /// 播放或暂停按钮
@@ -48,6 +52,14 @@
 @property (nonatomic, strong) UILabel *totalTimeLabel;
 
 @property (nonatomic, strong) UIButton *muteBtn;
+
+@property (nonatomic, strong) UIButton *giftBtn;
+
+@property (nonatomic, strong) UIButton *moreBtn;
+
+@property (nonatomic, strong) UIImageView *avatarImage;
+
+@property (nonatomic, strong) UILabel *nameLabel;
 /// 全屏按钮
 @property (nonatomic, strong) UIButton *fullScreenBtn;
 
@@ -62,13 +74,17 @@
         // 添加子控件
         [self addSubview:self.topToolView];
         [self addSubview:self.bottomToolView];
-        [self addSubview:self.playOrPauseBtn];
-        [self.topToolView addSubview:self.titleLabel];
+        [self.topToolView addSubview:self.backBtn];
+        [self.topToolView addSubview:self.moreBtn];
         [self.bottomToolView addSubview:self.currentTimeLabel];
         [self.bottomToolView addSubview:self.slider];
         [self.bottomToolView addSubview:self.totalTimeLabel];
-        [self.bottomToolView addSubview:self.fullScreenBtn];
         [self.bottomToolView addSubview:self.muteBtn];
+        [self.bottomToolView addSubview:self.playOrPauseBtn];
+        [self addSubview:self.avatarImage];
+        [self addSubview:self.nameLabel];
+        [self addSubview:self.titleLabel];
+        [self addSubview:self.giftBtn];
         
         // 设置子控件的响应事件
         [self makeSubViewsAction];
@@ -88,66 +104,59 @@
     CGFloat min_h = 0;
     CGFloat min_view_w = self.bounds.size.width;
     CGFloat min_view_h = self.bounds.size.height;
-    CGFloat min_margin = 9;
+    CGFloat min_margin = 10;
     
     min_x = 0;
     min_y = 0;
     min_w = min_view_w;
-    min_h = 40;
+    min_h = 44 + (iPhoneX ? 44 : 20);
     self.topToolView.frame = CGRectMake(min_x, min_y, min_w, min_h);
     
-    min_x = 15;
-    min_y = 5;
-    min_w = min_view_w - min_x - 15;
-    min_h = 30;
-    self.titleLabel.frame = CGRectMake(min_x, min_y, min_w, min_h);
+    self.backBtn.frame = CGRectMake(min_margin, min_h - 44, 44, 44);
     
-    min_h = 40;
+    self.moreBtn.frame = CGRectMake(self.topToolView.zf_right - 44 - min_margin, min_h - 44, 44, 44);
+    
+    min_h = iPhoneX ? 100 : 73;
     min_x = 0;
     min_y = min_view_h - min_h;
     min_w = min_view_w;
     self.bottomToolView.frame = CGRectMake(min_x, min_y, min_w, min_h);
     
-    min_x = 0;
-    min_y = 0;
-    min_w = 44;
-    min_h = min_w;
-    self.playOrPauseBtn.frame = CGRectMake(min_x, min_y, min_w, min_h);
-    self.playOrPauseBtn.center = self.center;
-    
-    min_x = min_margin + 28;
-    min_w = 62;
-    min_h = 28;
-    min_y = (self.bottomToolView.zf_height - min_h)/2;
-    self.currentTimeLabel.frame = CGRectMake(min_x, min_y, min_w, min_h);
-    
+    min_x = 15;
+    min_y = 32;
     min_w = 30;
-    min_h = min_w;
-    min_x = min_margin;
-    min_y = 0;
-    self.muteBtn.frame = CGRectMake(min_x, min_y, min_w, min_h);
-    self.muteBtn.zf_centerY = self.currentTimeLabel.zf_centerY;
+    min_h = 30;
     
-    min_w = 28;
-    min_h = min_w;
+    self.avatarImage.frame = CGRectMake(min_x, self.bottomToolView.zf_top - 40, 40, 40);
+    self.nameLabel.frame = CGRectMake(min_x + 50, self.avatarImage.zf_top, self.bottomToolView.zf_width - min_x - 116, 40);
+    self.titleLabel.frame = CGRectMake(min_x, self.avatarImage.zf_top - 30, self.bottomToolView.zf_width - min_x - 76, 20);
+    self.giftBtn.frame = CGRectMake(self.bottomToolView.zf_width - 66, self.avatarImage.zf_bottom - 50, 46, 46);
+    
+    self.muteBtn.frame = CGRectMake(min_x, min_y, min_w, min_h);
+    min_x = self.muteBtn.zf_right + 8;
+    
+    self.playOrPauseBtn.frame = CGRectMake(min_x, min_y, min_w, min_h);
+    
+    min_x = self.playOrPauseBtn.zf_right + 4;
+    min_y = 0;
+    min_w = 62;
+    min_h = 30;
+    self.currentTimeLabel.frame = CGRectMake(min_x, min_y, min_w, min_h);
+    self.currentTimeLabel.zf_centerY = self.playOrPauseBtn.zf_centerY;
+    
+    min_w = 62;
     min_x = self.bottomToolView.zf_width - min_w - min_margin;
     min_y = 0;
-    self.fullScreenBtn.frame = CGRectMake(min_x, min_y, min_w, min_h);
-    self.fullScreenBtn.zf_centerY = self.currentTimeLabel.zf_centerY;
-    
-    min_w = 62;
-    min_h = 28;
-    min_x = self.fullScreenBtn.zf_left - min_w - 4;
-    min_y = 0;
+    min_h = 30;
     self.totalTimeLabel.frame = CGRectMake(min_x, min_y, min_w, min_h);
-    self.totalTimeLabel.zf_centerY = self.currentTimeLabel.zf_centerY;
+    self.totalTimeLabel.zf_centerY = self.playOrPauseBtn.zf_centerY;
     
     min_x = self.currentTimeLabel.zf_right + 4;
     min_y = 0;
     min_w = self.totalTimeLabel.zf_left - min_x - 4;
     min_h = 30;
     self.slider.frame = CGRectMake(min_x, min_y, min_w, min_h);
-    self.slider.zf_centerY = self.currentTimeLabel.zf_centerY;
+    self.slider.zf_centerY = self.playOrPauseBtn.zf_centerY;
     
     if (!self.isShow) {
         self.topToolView.zf_y = -self.topToolView.zf_height;
@@ -161,6 +170,7 @@
 }
 
 - (void)makeSubViewsAction {
+    [self.backBtn addTarget:self action:@selector(backBtnClickAction:) forControlEvents:UIControlEventTouchUpInside];
     [self.playOrPauseBtn addTarget:self action:@selector(playPauseButtonClickAction:) forControlEvents:UIControlEventTouchUpInside];
     [self.fullScreenBtn addTarget:self action:@selector(fullScreenButtonClickAction:) forControlEvents:UIControlEventTouchUpInside];
 }
@@ -173,6 +183,16 @@
 
 - (void)fullScreenButtonClickAction:(UIButton *)sender {
     [self.player enterFullScreen:YES animated:YES];
+}
+
+- (void)backBtnClickAction:(UIButton *)sender {
+    self.player.lockedScreen = NO;
+    if (self.player.orientationObserver.supportInterfaceOrientation & ZFInterfaceOrientationMaskPortrait) {
+        [self.player enterFullScreen:NO animated:YES];
+    }
+    if (self.backBtnClickCallback) {
+        self.backBtnClickCallback();
+    }
 }
 
 /// 根据当前播放状态取反
@@ -188,6 +208,16 @@
 - (void)addMuteBtnSel:(SEL)selector actionTaget:(id)target {
     __weak typeof(target)weakTarget = target;
     [self.muteBtn addTarget:weakTarget action:selector forControlEvents:UIControlEventTouchUpInside];
+}
+
+- (void)addGiftBtnSel:(SEL)selector actionTaget:(id)target {
+    __weak typeof(target)weakTarget = target;
+    [self.giftBtn addTarget:weakTarget action:selector forControlEvents:UIControlEventTouchUpInside];
+}
+
+- (void)addMoreBtnSel:(SEL)selector actionTaget:(id)target {
+    __weak typeof(target)weakTarget = target;
+    [self.moreBtn addTarget:weakTarget action:selector forControlEvents:UIControlEventTouchUpInside];
 }
 
 - (void)changeMuteStatus:(BOOL)isMute {
@@ -253,7 +283,6 @@
     self.totalTimeLabel.text         = @"00:00";
     self.backgroundColor             = [UIColor clearColor];
     self.playOrPauseBtn.selected     = YES;
-    self.titleLabel.text             = @"";
 }
 
 - (void)showControlView {
@@ -296,6 +325,15 @@
 
 - (void)videoPlayer:(ZFPlayerController *)videoPlayer bufferTime:(NSTimeInterval)bufferTime {
     self.slider.bufferValue = videoPlayer.bufferProgress;
+}
+
+- (void)showTitle:(NSString *)title hostAvatar:(NSString *_Nullable)avatar hostName:(NSString *_Nullable)name fullScreenMode:(ZFFullScreenMode)fullScreenMode {
+    self.titleLabel.text = title;
+    self.player.orientationObserver.fullScreenMode = fullScreenMode;
+    self.nameLabel.text = name;
+    if (avatar != nil) {
+        [self.avatarImage setImageWithURLString:avatar placeholderImageName:nil];
+    }
 }
 
 - (void)showTitle:(NSString *)title fullScreenMode:(ZFFullScreenMode)fullScreenMode {
@@ -343,7 +381,7 @@
     if (!_titleLabel) {
         _titleLabel = [[UILabel alloc] init];
         _titleLabel.textColor = [UIColor whiteColor];
-        _titleLabel.font = [UIFont systemFontOfSize:15.0];
+        _titleLabel.font = [UIFont systemFontOfSize:16.0 weight:UIFontWeightSemibold];
     }
     return _titleLabel;
 }
@@ -357,11 +395,20 @@
     return _bottomToolView;
 }
 
+- (UIButton *)backBtn {
+    if (!_backBtn) {
+        _backBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+        _backBtn.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 15);
+        [_backBtn setImage:ZFPlayer_Image(@"ZFPlayer_back_full") forState:UIControlStateNormal];
+    }
+    return _backBtn;
+}
+
 - (UIButton *)playOrPauseBtn {
     if (!_playOrPauseBtn) {
         _playOrPauseBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_playOrPauseBtn setImage:ZFPlayer_Image(@"new_allPlay_44x44_") forState:UIControlStateNormal];
-        [_playOrPauseBtn setImage:ZFPlayer_Image(@"new_allPause_44x44_") forState:UIControlStateSelected];
+        [_playOrPauseBtn setImage:ZFPlayer_Image(@"ZFPlayer_play") forState:UIControlStateNormal];
+        [_playOrPauseBtn setImage:ZFPlayer_Image(@"ZFPlayer_pause") forState:UIControlStateSelected];
     }
     return _playOrPauseBtn;
 }
@@ -413,6 +460,44 @@
         [_muteBtn setImage:ZFPlayer_Image(@"ijk_mute") forState:UIControlStateNormal];
     }
     return _muteBtn;
+}
+
+- (UIButton *)giftBtn {
+    if (!_giftBtn) {
+        _giftBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_giftBtn setImage:[UIImage imageNamed:@"home_gift_send"] forState:UIControlStateNormal];
+    }
+    return _giftBtn;
+}
+
+- (UIButton *)moreBtn {
+    if (!_moreBtn) {
+        _moreBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_moreBtn setImage:[UIImage imageNamed:@"home_more_icon"] forState:UIControlStateNormal];
+        _moreBtn.tintColor = [UIColor whiteColor];
+    }
+    return _moreBtn;
+}
+
+- (UIImageView *)avatarImage {
+    if (!_avatarImage) {
+        _avatarImage = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, 40, 40)];
+        _avatarImage.contentMode = UIViewContentModeScaleAspectFill;
+        _avatarImage.layer.cornerRadius = 20;
+        _avatarImage.layer.masksToBounds = YES;
+        _avatarImage.layer.borderColor = [[UIColor whiteColor] CGColor];
+        _avatarImage.layer.borderWidth = 2;
+    }
+    return _avatarImage;
+}
+
+- (UILabel *)nameLabel {
+    if (!_nameLabel) {
+        _nameLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, 1, 40)];
+        _nameLabel.textColor = [UIColor whiteColor];
+        _nameLabel.font = [UIFont systemFontOfSize:14.0f];
+    }
+    return _nameLabel;
 }
 
 @end

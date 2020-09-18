@@ -205,6 +205,7 @@
 
 /// 隐藏控制层
 - (void)hideControlViewWithAnimated:(BOOL)animated {
+    return;
     self.controlViewAppeared = NO;
     if (self.controlViewAppearedCallback) {
         self.controlViewAppearedCallback(NO);
@@ -278,18 +279,18 @@
 }
 
 /// 设置标题、封面、全屏模式
-- (void)showTitle:(NSString *)title coverURLString:(NSString *)coverUrl fullScreenMode:(ZFFullScreenMode)fullScreenMode {
+- (void)showTitle:(NSString *)title coverURLString:(NSString *)coverUrl hostAvatar:(NSString *_Nullable)avatar hostName:(NSString *_Nullable)name fullScreenMode:(ZFFullScreenMode)fullScreenMode {
     UIImage *placeholder = [ZFUtilities imageWithColor:[UIColor colorWithRed:220/255.0 green:220/255.0 blue:220/255.0 alpha:1] size:self.bgImgView.bounds.size];
-    [self showTitle:title coverURLString:coverUrl placeholderImage:placeholder fullScreenMode:fullScreenMode];
+    [self showTitle:title coverURLString:coverUrl placeholderImage:placeholder hostAvatar:avatar hostName:name fullScreenMode:fullScreenMode];
 }
 
 /// 设置标题、封面、默认占位图、全屏模式
-- (void)showTitle:(NSString *)title coverURLString:(NSString *)coverUrl placeholderImage:(UIImage *)placeholder fullScreenMode:(ZFFullScreenMode)fullScreenMode {
+- (void)showTitle:(NSString *)title coverURLString:(NSString *)coverUrl placeholderImage:(UIImage *)placeholder hostAvatar:(NSString *_Nullable)avatar hostName:(NSString *_Nullable)name fullScreenMode:(ZFFullScreenMode)fullScreenMode {
     [self resetControlView];
     [self layoutIfNeeded];
     [self setNeedsDisplay];
-    [self.portraitControlView showTitle:title fullScreenMode:fullScreenMode];
-    [self.landScapeControlView showTitle:title fullScreenMode:fullScreenMode];
+    [self.portraitControlView showTitle:title hostAvatar:avatar hostName:name fullScreenMode:fullScreenMode];
+    [self.landScapeControlView showTitle:title hostAvatar:avatar hostName:name fullScreenMode:fullScreenMode];
     /// 这里直接设置播放器视图里的coverImageView
     [self.player.currentPlayerManager.view.coverImageView setImageWithURLString:coverUrl placeholder:placeholder];
     [self.bgImgView setImageWithURLString:coverUrl placeholder:placeholder];
@@ -831,6 +832,11 @@
 - (void)setBackBtnClickCallback:(void (^)(void))backBtnClickCallback {
     _backBtnClickCallback = [backBtnClickCallback copy];
     self.landScapeControlView.backBtnClickCallback = _backBtnClickCallback;
+}
+
+- (void)setPortraitBackBtnClickCallback:(void (^)(void))portraitBackBtnClickCallback {
+    _portraitBackBtnClickCallback = [portraitBackBtnClickCallback copy];
+    self.portraitControlView.backBtnClickCallback = _portraitBackBtnClickCallback;
 }
 
 @end

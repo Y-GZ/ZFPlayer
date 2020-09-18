@@ -86,6 +86,8 @@
 /// 返回按钮点击回调
 @property (nonatomic, copy) void(^backBtnClickCallback)(void);
 
+@property (nonatomic, copy) void(^portraitBackBtnClickCallback)(void);
+
 /// 控制层显示或者隐藏
 @property (nonatomic, readonly) BOOL controlViewAppeared;
 
@@ -120,7 +122,7 @@
  @param coverUrl 视频的封面，占位图默认是灰色的
  @param fullScreenMode 全屏模式
  */
-- (void)showTitle:(NSString *)title coverURLString:(NSString *)coverUrl fullScreenMode:(ZFFullScreenMode)fullScreenMode;
+- (void)showTitle:(NSString *)title coverURLString:(NSString *)coverUrl hostAvatar:(NSString *_Nullable)avatar hostName:(NSString *_Nullable)name fullScreenMode:(ZFFullScreenMode)fullScreenMode;
 
 /**
  设置标题、封面、默认占位图、全屏模式
@@ -130,7 +132,7 @@
  @param placeholder 指定封面的placeholder
  @param fullScreenMode 全屏模式
  */
-- (void)showTitle:(NSString *)title coverURLString:(NSString *)coverUrl placeholderImage:(UIImage *)placeholder fullScreenMode:(ZFFullScreenMode)fullScreenMode;
+- (void)showTitle:(NSString *)title coverURLString:(NSString *)coverUrl placeholderImage:(UIImage *)placeholder hostAvatar:(NSString *_Nullable)avatar hostName:(NSString *_Nullable)name fullScreenMode:(ZFFullScreenMode)fullScreenMode;
 
 /**
  设置标题、UIImage封面、全屏模式
